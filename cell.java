@@ -8,12 +8,25 @@ public class cell {
     }
 
     public String toString(){
-        if(isHit)
+        if(isHit && isShip){
             return "[ X ]";
+        }
         else if(isShip)
             return "[ S ]";
-        return "[ * ]";
+        else if(isHit){
+            return "[ * ]";
+        }
+        return "[   ]";
         
+        
+    }
+
+    public void placeShip(){
+        isShip = true;
+    }
+
+    public boolean isShip(){
+        return isShip;
     }
 
 }
