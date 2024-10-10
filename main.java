@@ -23,11 +23,22 @@ class battleship{
         player.printBoard();
         System.out.println("\n");
         }
+        while(!checkEnd(player, bot)){
+            showBoards(player, bot);
+            System.out.print("Make a guess:");
+            String guess = scanner.nextLine();
+            boolean hit = bot.guessSpot(letterToColumn(guess.substring(0,1)), Integer.parseInt(guess.substring(1)));
+            if(hit)
+                System.out.println("That's a hit!");
+            else
+            System.out.println("So close!");
+        }
 
-        showBoards(player, bot);
-        
 
+    }
 
+    public static boolean checkEnd(board player, board bot){
+        return bot.isCleared() &&  player.isCleared();
     }
 
     public static int letterToColumn(String letter) {
@@ -62,7 +73,7 @@ class battleship{
         System.out.println("Your board:");
         player.printBoard();
         System.out.println("\n\n");
-        System.out.println("Your board:");
+        System.out.println("Computer board:");
         bot.printBoard();
         System.out.println("\n\n");
     }

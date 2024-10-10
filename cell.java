@@ -21,12 +21,21 @@ public class cell {
         
     }
 
+    public boolean takeFire(){
+        isHit = true;
+        return isHit;
+    }
+
     public void placeShip(){
         isShip = true;
     }
 
     public boolean isShip(){
         return isShip;
+    }
+
+    public boolean hitShip(){
+        return isHit && isShip;
     }
 
 }

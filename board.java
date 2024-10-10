@@ -38,6 +38,10 @@ public class board {
         return isPlayer;
     }
 
+    public boolean guessSpot(int col, int row){
+        return board[row - 1][col].takeFire();
+    }
+
     public boolean placeShip(int col, int row, String direction, int length){
         if(canPlaceShip(col, row, direction, length)){
             board[row][col].placeShip();
@@ -61,6 +65,19 @@ public class board {
             return true;
         }
         return false;
+    }
+
+    public boolean isCleared(){
+        boolean clear = true;
+        for(int i = 0; i < board.length; i++){
+            for(int j = 0; j < board[0].length; j++){
+                System.out.println("Checking: " + i + " and " + j + ": " + (board[i][j].isShip() && !board[i][j].hitShip()));
+                if(board[i][j].isShip() && !board[i][j].hitShip()){
+                    clear = false;
+                }
+            }
+        }
+        return clear;
     }
 
     public boolean isOccupied(int row, int col) {
