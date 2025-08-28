@@ -1,122 +1,177 @@
-public class board {
+import java.util.HashMap;
+import java.util.Map;
 
-    private cell[][] board;
+public class Board {
+    private Cell[][] grid;
     private boolean isPlayer;
-
-
-
-    public board(boolean isPlayer){
+    private Map<Integer, Integer> shipHealth; // shipId -> remaining health
+    private int nextShipId;
+    private int sunkShips;
+    
+    public Board(boolean isPlayer) {
         this.isPlayer = isPlayer;
-        this.board = new cell[10][10];
-        for(int i = 0; i < this.board.length; i++){
-            for(int j = 0; j < this.board.length; j++){
-                board[i][j] = new cell();
+        this.grid = new Cell[10][10];
+        this.shipHealth = new HashMap<>();
+        this.nextShipId = 0;
+        this.sunkShips = 0;
+        
+        initializeGrid();
+    }
+    
+    private void initializeGrid() {
+        for (int i = 0; i < grid.length; i++) {
+            for (int j = 0; j < grid[i].length; j++) {
+                grid[i][j] = new Cell();
             }
         }
     }
-
-    public void printBoard(){
-        System.out.print("     A    B    C    D    E    F    G    H    I    J");
+    
+    public void printBoard() {
+        // Print column headers
+        System.out.print("    ");
+        for (char c = 'A'; c <= 'J'; c++) {
+            System.out.print("  " + c + "  ");
+        }
         System.out.println();
-        for(int i = 0; i < this.board.length; i++){
-            if(i!=9)
-                System.out.print(i+1 + "  ");
-            else
-            System.out.print(i+1 + " ");
-            for(int j = 0; j < this.board[i].length; j++){
-                if(!isPlayer && this.board[i][j].toString().equals("[ S ]")){
-                    System.out.print("[   ]");
-                } else{
-                    System.out.print(this.board[i][j]);
-                }
+        
+        // Print grid with row numbers
+        for (int i = 0; i < grid.length; i++) {
+            System.out.printf("%2d  ", i + 1);
+            for (int j = 0; j < grid[i].length; j++) {
+                System.out.print(grid[i][j].toString(isPlayer));
             }
             System.out.println();
         }
     }
-
-    public boolean isPlayer(){
-        return isPlayer;
-    }
-
-    public boolean guessSpot(int col, int row){
-        return board[row - 1][col].takeFire();
-    }
-
-    public boolean placeShip(int col, int row, String direction, int length){
-        if(canPlaceShip(col, row, direction, length)){
-            board[row][col].placeShip();
-            if(direction.equals("up")){
-                for(int i = 1; i < length; i++){
-                    board[row - i][col].placeShip();    
-                }
-            } else if(direction.equals("down")){
-                for(int i = 1; i < length; i++){
-                    board[row + i][col].placeShip();    
-                }
-            }else if(direction.equals("left")){
-                for(int i = 1; i < length; i++){
-                    board[row][col - i].placeShip();    
-                }
-            } else{
-                for(int i = 1; i < length; i++){
-                    board[row][col + i].placeShip();    
-                }
-            }
-            return true;
+    
+    public boolean guessSpot(int col, int row) {
+        if (isValidPosition(row, col)) {
+            return grid[row][col].takeFire();
         }
         return false;
     }
-
-    public boolean isCleared(){
-        boolean clear = true;
-        for(int i = 0; i < board.length; i++){
-            for(int j = 0; j < board[0].length; j++){
-                System.out.println("Checking: " + i + " and " + j + ": " + (board[i][j].isShip() && !board[i][j].hitShip()));
-                if(board[i][j].isShip() && !board[i][j].hitShip()){
-                    clear = false;
+    
+    public boolean isAlreadyGuessed(int col, int row) {
+        return isValidPosition(row, col) && grid[row][col].isHit();
+    }
+    
+    public boolean placeShip(int col, int row, String direction, int length) {
+        if (!canPlaceShip(col, row, direction, length)) {
+            return false;
+        }
+        
+        int shipId = nextShipId++;
+        shipHealth.put(shipId, length);
+        
+        // Place the ship
+        placeShipSegment(col, row, shipId);
+        
+        if (direction.equalsIgnoreCase("up")) {
+            for (int i = 1; i < length; i++) {
+                placeShipSegment(col, row - i, shipId);
+            }
+        } else if (direction.equalsIgnoreCase("down")) {
+            for (int i = 1; i < length; i++) {
+                placeShipSegment(col, row + i, shipId);
+            }
+        } else if (direction.equalsIgnoreCase("left")) {
+            for (int i = 1; i < length; i++) {
+                placeShipSegment(col - i, row, shipId);
+            }
+        } else if (direction.equalsIgnoreCase("right")) {
+            for (int i = 1; i < length; i++) {
+                placeShipSegment(col + i, row, shipId);
+            }
+        }
+        
+        return true;
+    }
+    
+    private void placeShipSegment(int col, int row, int shipId) {
+        if (isValidPosition(row, col)) {
+            grid[row][col].placeShip(shipId);
+        }
+    }
+    
+    public boolean isCleared() {
+        return sunkShips == shipHealth.size();
+    }
+    
+    public int getSunkShips() {
+        return sunkShips;
+    }
+    
+    public boolean isShipSunk(int col, int row) {
+        if (!isValidPosition(row, col) || !grid[row][col].isShip()) {
+            return false;
+        }
+        
+        int shipId = grid[row][col].getShipId();
+        if (shipId == -1) return false;
+        
+        // Check if all segments of this ship are hit
+        int hitSegments = 0;
+        for (int i = 0; i < grid.length; i++) {
+            for (int j = 0; j < grid[i].length; j++) {
+                if (grid[i][j].getShipId() == shipId && grid[i][j].isHit()) {
+                    hitSegments++;
                 }
             }
         }
-        return clear;
+        
+        if (hitSegments == shipHealth.get(shipId)) {
+            sunkShips++;
+            return true;
+        }
+        
+        return false;
     }
-
-    public boolean isOccupied(int row, int col) {
-        return board[row][col].isShip();  // Assuming Cell has a method to check if it has a ship
-    }
-
+    
     public boolean canPlaceShip(int col, int row, String direction, int length) {
-        // Check bounds and make sure no other ship is in the way
-        if (direction.equals("up")) {
-            if (row - length + 1 < 0) 
-                return false;
+        if (!isValidPosition(row, col)) {
+            return false;
+        }
+        
+        // Check if the starting position is occupied
+        if (grid[row][col].isShip()) {
+            return false;
+        }
+        
+        // Check all segments in the desired direction
+        if (direction.equalsIgnoreCase("up")) {
+            if (row - length + 1 < 0) return false;
             for (int i = 0; i < length; i++) {
-                if (isOccupied(row - i, col))  
+                if (!isValidPosition(row - i, col) || grid[row - i][col].isShip()) {
                     return false;
+                }
             }
-        } else if (direction.equals("down")) {
-            if (row + length >= 10) 
-                return false;
+        } else if (direction.equalsIgnoreCase("down")) {
+            if (row + length - 1 >= 10) return false;
             for (int i = 0; i < length; i++) {
-                if (isOccupied(row + i, col)) 
-                return false;
+                if (!isValidPosition(row + i, col) || grid[row + i][col].isShip()) {
+                    return false;
+                }
             }
-        } else if (direction.equals("left")) {
-            if (col - length + 1 < 0) 
-                return false;
+        } else if (direction.equalsIgnoreCase("left")) {
+            if (col - length + 1 < 0) return false;
             for (int i = 0; i < length; i++) {
-                if (isOccupied(row, col - i)) 
-                return false;
+                if (!isValidPosition(row, col - i) || grid[row][col - i].isShip()) {
+                    return false;
+                }
             }
-        } else if (direction.equals("right")) {
-            if (col + length >= 10) 
-                return false;
+        } else if (direction.equalsIgnoreCase("right")) {
+            if (col + length - 1 >= 10) return false;
             for (int i = 0; i < length; i++) {
-                if (isOccupied(row, col + i)) 
-                return false;
+                if (!isValidPosition(row, col + i) || grid[row][col + i].isShip()) {
+                    return false;
+                }
             }
         }
+        
         return true;
     }
-
+    
+    private boolean isValidPosition(int row, int col) {
+        return row >= 0 && row < 10 && col >= 0 && col < 10;
+    }
 }
-

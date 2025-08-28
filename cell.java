@@ -1,41 +1,52 @@
-public class cell {
+public class Cell {
     private boolean isShip;
     private boolean isHit;
-
-    public cell(){
+    private int shipId; // -1 for no ship, otherwise unique ship identifier
+    
+    public Cell() {
         this.isShip = false;
         this.isHit = false;
+        this.shipId = -1;
     }
-
-    public String toString(){
-        if(isHit && isShip){
-            return "[ X ]";
+    
+    public String toString(boolean showShips) {
+        if (isHit && isShip) {
+            return "[ X ]"; // Hit ship
+        } else if (isHit) {
+            return "[ • ]"; // Miss
+        } else if (isShip && showShips) {
+            return "[ S ]"; // Ship (only shown if allowed)
+        } else {
+            return "[   ]"; // Unexplored water
         }
-        else if(isShip)
-            return "[ S ]";
-        else if(isHit){
-            return "[ * ]";
+    }
+    
+    public boolean takeFire() {
+        if (!isHit) {
+            isHit = true;
+            return isShip;
         }
-        return "[   ]";
-        
-        
+        return false; // Already hit
     }
-
-    public boolean takeFire(){
-        isHit = true;
-        return isHit;
+    
+    public void placeShip(int shipId) {
+        this.isShip = true;
+        this.shipId = shipId;
     }
-
-    public void placeShip(){
-        isShip = true;
-    }
-
-    public boolean isShip(){
+    
+    public boolean isShip() {
         return isShip;
     }
-
-    public boolean hitShip(){
+    
+    public boolean isHit() {
+        return isHit;
+    }
+    
+    public int getShipId() {
+        return shipId;
+    }
+    
+    public boolean isSunk() {
         return isHit && isShip;
     }
-
 }
